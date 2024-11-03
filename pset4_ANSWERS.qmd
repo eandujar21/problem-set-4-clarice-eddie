@@ -87,7 +87,6 @@ for file in os.listdir(folder_path):
 
 # Define a function to load CSV files with different encodings and filter for short-term hospitals
 
-
 def load_and_filter_csv(file_name, encodings, year):
     for encoding in encodings:
         try:
