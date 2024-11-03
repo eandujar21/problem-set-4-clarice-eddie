@@ -1,0 +1,355 @@
+---
+title: "ps4"
+format: 
+  pdf:
+    keep-tex: true
+    include-in-header: 
+       text: |
+         \usepackage{fvextra}
+         \DefineVerbatimEnvironment{Highlighting}{Verbatim}{breaklines,commandchars=\\\{\}}
+include-before-body:
+  text: |
+    \RecustomVerbatimEnvironment{verbatim}{Verbatim}{
+      showspaces = false,
+      showtabs = false,
+      breaksymbolleft={},
+      breaklines
+    }
+---
+
+**PS4:** Due Sat Nov 2 at 5:00PM Central. Worth 100 points. 
+### Academic integrity statement
+We checked Googled commands/ways to go about getting the output needed. I have included the links where I learned from. Additionally, I used ChatGPT for help with debugging double checking the flow of my code.  I also referred to code from last quarter's python class for grouping, datetime, dictionary, length, float, round, print,a nd reset index functinos. ALso checked https://stackoverflow.com/questions/tagged/geospatial for specific codign questions.
+
+1. "This submission is my work alone and complies with the 30538 integrity
+policy." **CT** **EA**
+2. "I have uploaded the names of anyone I worked with on the problem set **[here](https://docs.google.com/forms/d/1-zzHx762odGlpVWtgdIC55vqF-j3gqdAp6Pno1rIGK0/edit)**"  \*\*\_\_\*\* (1 point)
+3. Late coins used this pset: **3** Late coins left after submission: **1**
+
+## Style Points (10 pts)
+## Submission Steps (10 pts)
+1. This problem set is a paired problem set.
+2. Play paper, scissors, rock to determine who goes first. Call that person *Partner 1*.
+    - Partner 1 (cmtee):
+    - Partner 2 (eandujar):
+3. "This submission is our work alone and complies with the 30538 integrity policy." Add your initials to indicate your agreement: \*\*\_\_\*\* \*\*\_\_\*\*
+4. "I have uploaded the names of anyone else other than my partner and I worked with on the problem set **[here](https://docs.google.com/forms/d/185usrCREQaUbvAXpWhChkjghdGgmAZXA3lPWpXLLsts/edit)**"  (1 point)
+5. Late coins used this pset: \*\*\3\*\* Late coins left after submission: \*\*\1\*\*
+## Download and explore the Provider of Services (POS) file (10 pts)
+
+
+```{python}
+import pandas as pd
+import os
+import matplotlib.pyplot as plt
+import geopandas as gpd
+import time
+```
+
+1. I pulled 
+
+FAC_NAME
+STATE_CD
+PRVDR_CTGRY_CD
+PRVDR_CTGRY_SBTYP_CD
+ZIP-CD
+PGM_TRMNTN_CD
+PGM_TRMNTN_CD
+2. 
+```{python}
+# Load the 2016 dataset
+df = pd.read_csv(
+    'C:/Users/clari/OneDrive/Documents/Python II/pos_files/pos2016.csv')
+# change the path as needed
+```
+
+```{python}
+# Filter for short-term hospitals (provider type code 01 and subtype code 01)
+st_hospitals_2016 = df[(df['PRVDR_CTGRY_CD'] == 1) &
+                       (df['PRVDR_CTGRY_SBTYP_CD'] == 1)]
+print(len(st_hospitals_2016))
+```
+
+    a.There are 7,245 reported in this data.This number doesn't make sense because there seem to be too many short-term hospitals.
+    b. According to AHA, there were only 4,840 in 2016, so this number doesn't make sense. This could be due to differences in
+     definitions, inclusion criteria, and scope. Maybe this raw dataset  has a broader range of facilities certified for Medicare/Medicaid billing, which increases the cout. Maybe the includsion of subtypes increased our count too.
+https://www.aha.org/system/files/2018-02/2018-aha-hospital-fast-facts_0.pdf
+
+3. 
+```{python}
+# Define the path to your folder containing the POS files
+folder_path = r'C:/Users/clari/OneDrive/Documents/Python II/pos_files'
+
+# List all files in the directory to check if they exist
+print("Files in directory:")
+for file in os.listdir(folder_path):
+    print(file)
+
+# Define a function to load CSV files with different encodings and filter for short-term hospitals
+
+
+def load_and_filter_csv(file_name, encodings, year):
+    for encoding in encodings:
+        try:
+            # Try reading the file with a specified encoding
+            df = pd.read_csv(os.path.join(folder_path, file_name),
+                             encoding=encoding, engine='python')
+            print(f'Successfully loaded {file_name} with encoding {encoding}.')
+
+            # Filter for short-term hospitals (provider type code 01 and subtype code 01)
+            st_hospitals = df[(df['PRVDR_CTGRY_CD'] == 1) &
+                              (df['PRVDR_CTGRY_SBTYP_CD'] == 1)]
+            # Add a 'Year' column to the DataFrame
+            st_hospitals['Year'] = year
+
+            return st_hospitals  # Return the filtered DataFrame if loaded successfully
+        except Exception as e:
+            print(f'Error loading {file_name} with encoding {encoding}: {e}')
+    return None  # Return None if all attempts fail
+
+
+# List of encodings to try
+encodings = ['utf-8', 'ISO-8859-1', 'latin1', 'utf-8-sig', 'cp1252']
+
+# List of file names and corresponding years
+files_with_years = [('pos2016.csv', 2016), ('pos2017.csv', 2017),
+                    ('pos2018.csv', 2018), ('pos2019.csv', 2019)]
+
+# Load datasets for all years and filter for short-term hospitals
+appended_dfs = []
+for file_name, year in files_with_years:
+    df = load_and_filter_csv(file_name, encodings, year)
+    if df is not None:
+        appended_dfs.append(df)
+
+# Check if we successfully loaded and filtered data for all years
+if len(appended_dfs) == len(files_with_years):
+    # Append all filtered DataFrames together into one DataFrame
+    combined_df = pd.concat(appended_dfs, ignore_index=True)
+    print("Successfully appended all datasets.")
+
+    # Save the combined DataFrame to a CSV file named 'pos_6789.csv'
+    output_file = os.path.join(folder_path, 'pos_6789.csv')
+    combined_df.to_csv(output_file, index=False)
+    print(f"Combined dataset saved as {output_file}")
+else:
+    print("Some files could not be loaded or filtered.")
+
+# Optionally, print the first few rows of the combined DataFrame to verify
+if len(appended_dfs) > 0:
+    print(combined_df.head())
+```
+
+There was a utf-8 error, so I asked chatGPT how to fix it 
+```{python}
+combined_df = pd.read_csv(os.path.join(folder_path, 'pos_6789.csv'))
+
+# Group by 'Year' and count the number of rows per year
+hospitals_by_year = combined_df.groupby('Year').size()
+
+# Plotting the number of hospitals by year
+plt.figure(figsize=(8, 5))
+hospitals_by_year.plot(kind='bar', color='lightcoral')
+plt.title('Number of Hospitals by Year')
+plt.xlabel('Year')
+plt.ylabel('Number of Hospitals')
+plt.xticks(rotation=0)
+plt.show()
+```
+
+4. 
+    a.
+```{python}
+unique_hospitals_by_year = combined_df.groupby('Year')['PRVDR_NUM'].nunique()
+
+# Plotting the number of unique hospitals by year
+plt.figure(figsize=(8, 5))
+unique_hospitals_by_year.plot(kind='bar', color='lightcoral', edgecolor='black')
+plt.title('Number of Unique Hospitals by Year', fontsize=16)
+plt.xlabel('Year', fontsize=14)
+plt.ylabel('Number of Unique Hospitals', fontsize=14)
+plt.xticks(rotation=0)
+plt.grid(axis='y', linestyle='--', alpha=0.7)
+plt.tight_layout()
+plt.show()
+```
+
+    b.Both plots (total vs. unique hospitals) give the same result. This strongly suggests that the  dataset is clean and well-structured, with no duplicate entries for hospitals based on their CMS certification numbers (PRVDR_NUM). Each hospital appears only once per year, which means I can confidently proceed with further analysis without worrying about duplicate data affecting your results.
+
+## Identify hospital closures in POS file (15 pts) (*)
+
+
+```{python}
+import pandas as pd
+import altair as alt
+alt.renderers.enable("png")
+import time
+from vega_datasets import data as vega_data
+import warnings 
+warnings.filterwarnings('ignore')
+
+folder_path = r'C:\Users\eddie\Downloads\pos_6789 (2).csv'
+# change when Clarice: df = pd.read_csv('C:/Users/clari/OneDrive/Documents/Python II/pos_files/pos_6789.csv')
+
+df = pd.read_csv(folder_path)
+```
+
+2.1
+
+Checking columns to verify
+
+```{python}
+
+import pandas as pd
+
+
+# Get a list of all column names
+column_names = df.columns.tolist()
+
+# Print the list of column names
+print(column_names)
+
+
+```
+
+
+```{python}
+import pandas as pd
+
+# Step 1: Filter hospitals active in 2016
+active_2016 = df[(df['Year'] == 2016) & (df['PGM_TRMNTN_CD'] == 0)]
+
+# Step 2: Initialize a list to capture closures
+closures = []
+
+# Step 3: Loop through each hospital that was active in 2016
+for _, row in active_2016.iterrows():
+    prvd_num = row['PRVDR_NUM']
+    facility_name = row['FAC_NAME']
+    zip_code = row['ZIP_CD']
+    suspected_closure_year = None
+    
+    # Check each year from 2017 to 2019
+    for year in range(2017, 2020):
+        record = df[(df['Year'] == year) & (df['PRVDR_NUM'] == prvd_num)]
+        
+        # Check if hospital is not active or missing
+        if record.empty or record.iloc[0]['PGM_TRMNTN_CD'] != 0:
+            suspected_closure_year = year
+            break
+    
+    # If closure year was found, add it to the list
+    if suspected_closure_year:
+        closures.append({
+            'Facility Name': facility_name,
+            'ZIP_CD': zip_code,
+            'Suspected Closure Year': suspected_closure_year
+        })
+
+# Step 4: Convert the list to a DataFrame and display the count of closures
+closures_df = pd.DataFrame(closures)
+closure_count = closures_df.shape[0]
+
+print(f"Total suspected closures: {closure_count}")
+closures_df.head()
+```
+
+According to this, there are 174 hospitals that were active and have since closed.
+
+2.2
+
+```{python}
+# Sort closures by Facility Name and select the first 10 rows
+sorted_closures_df = closures_df.sort_values(by='Facility Name').head(10)
+
+# Display the Facility Name and Suspected Closure Year for the first 10 rows
+print(sorted_closures_df[['Facility Name', 'Suspected Closure Year']])
+
+
+```
+
+2.3 - i
+
+(After running into errors setting up the for loop, ChatGPT was used for clean-up and debugging)
+
+```{python}
+# Step 1: Calculate the number of active hospitals per zip code and year
+active_counts = df[df['PGM_TRMNTN_CD'] == 0].groupby(['ZIP_CD', 'Year']).size().reset_index(name='Active Hospital Count')
+
+# Step 2: Create empty lists for mergers and closures.
+potential_mergers = []
+confirmed_closures = []
+
+# Step 3: Loop through each row of the closure df
+for _, closure in closures_df.iterrows():
+    zip_code = closure['ZIP_CD']
+    closure_year = closure['Suspected Closure Year']
+    
+    # Get active counts for the zip code in the closure year and the following year
+    active_current_year = active_counts[(active_counts['ZIP_CD'] == zip_code) & (active_counts['Year'] == closure_year)]
+    active_next_year = active_counts[(active_counts['ZIP_CD'] == zip_code) & (active_counts['Year'] == closure_year + 1)]
+    
+    # Check if there is an increase in hospital counts from one year to next
+    if not active_current_year.empty and not active_next_year.empty:
+        if active_next_year.iloc[0]['Active Hospital Count'] >= active_current_year.iloc[0]['Active Hospital Count']:
+            # Potential merger if active hospital count is stable or increases
+            potential_mergers.append(closure)
+            continue 
+    
+    # Otherwise, it's a confirmed closure
+    confirmed_closures.append(closure)
+
+# Step 4: Convert the lists to DataFrames
+potential_mergers_df = pd.DataFrame(potential_mergers)
+confirmed_closures_df = pd.DataFrame(confirmed_closures)
+
+# Step 5: Output
+print(f"Potential mergers: {len(potential_mergers_df)}")
+print(f"Confirmed closures after correction: {len(confirmed_closures_df)}")
+
+confirmed_closures_df.head()
+
+
+```
+
+We identify 27 potential mergers, based on an increase / stabilization of hospital amounts per zip code from one year to the next. By subtracting this from our previous closure total of 174, we get 174-27 = 147, our confirmed closures after accounting for these mergers.
+
+2.3 - ii
+
+```{python}
+# Sort confirmed closures by Facility Name and select the first 10 rows
+sorted_confirmed_closures_df = confirmed_closures_df.sort_values(by='Facility Name').head(10)
+
+# Display the Facility Name and Suspected Closure Year for the first 10 rows
+print(sorted_confirmed_closures_df[['Facility Name', 'ZIP_CD', 'Suspected Closure Year']])
+
+```
+
+## Download Census zip code shapefile (10 pt) 
+
+1. 
+    a.
+    b. 
+2. 
+
+## Calculate zip code’s distance to the nearest hospital (20 pts) (*)
+
+1. 
+2. 
+3. 
+4. 
+    a.
+    b.
+5. 
+    a.
+    b.
+    c.
+    
+## Effects of closures on access in Texas (15 pts)
+
+1. 
+2. 
+3. 
+4. 
+
+## Reflecting on the exercise (10 pts) 
