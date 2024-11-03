@@ -313,7 +313,6 @@ confirmed_closures_df.head()
 We identify 27 potential mergers, based on an increase / stabilization of hospital amounts per zip code from one year to the next. By subtracting this from our previous closure total of 174, we get 174-27 = 147, our confirmed closures after accounting for these mergers.
 
 2.3 - ii
-
 ```{python}
 # Sort confirmed closures by Facility Name and select the first 10 rows
 sorted_confirmed_closures_df = confirmed_closures_df.sort_values(by='Facility Name').head(10)
