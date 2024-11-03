@@ -43,14 +43,144 @@ Please refer to the minilesson on code style
 
 ## Download and explore the Provider of Services (POS) file (10 pts)
 
-1. 
+
+```{python}
+import pandas as pd
+import os
+import matplotlib.pyplot as plt
+import geopandas as gpd
+import time
+```
+
+1. I pulled 
+
+FAC_NAME
+STATE_CD
+PRVDR_CTGRY_CD
+PRVDR_CTGRY_SBTYP_CD
+ZIP-CD
+PGM_TRMNTN_CD
+PGM_TRMNTN_CD
 2. 
-    a.
-    b.
+```{python}
+# Load the 2016 dataset
+df = pd.read_csv(
+    'C:/Users/clari/OneDrive/Documents/Python II/pos_files/pos2016.csv')
+# change the path as needed
+```
+
+```{python}
+# Filter for short-term hospitals (provider type code 01 and subtype code 01)
+st_hospitals_2016 = df[(df['PRVDR_CTGRY_CD'] == 1) &
+                       (df['PRVDR_CTGRY_SBTYP_CD'] == 1)]
+print(len(st_hospitals_2016))
+```
+
+    a.There are 7,245 reported in this data.This number doesn't make sense because there seem to be too many short-term hospitals.
+    b. According to AHA, there were only 4,840 in 2016, so this number doesn't make sense. This could be due to differences in
+     definitions, inclusion criteria, and scope. Maybe this raw dataset  has a broader range of facilities certified for Medicare/Medicaid billing, which increases the cout. Maybe the includsion of subtypes increased our count too.
+https://www.aha.org/system/files/2018-02/2018-aha-hospital-fast-facts_0.pdf
+
 3. 
+```{python}
+# Define the path to your folder containing the POS files
+folder_path = r'C:/Users/clari/OneDrive/Documents/Python II/pos_files'
+
+# List all files in the directory to check if they exist
+print("Files in directory:")
+for file in os.listdir(folder_path):
+    print(file)
+
+# Define a function to load CSV files with different encodings and filter for short-term hospitals
+
+
+def load_and_filter_csv(file_name, encodings, year):
+    for encoding in encodings:
+        try:
+            # Try reading the file with a specified encoding
+            df = pd.read_csv(os.path.join(folder_path, file_name),
+                             encoding=encoding, engine='python')
+            print(f'Successfully loaded {file_name} with encoding {encoding}.')
+
+            # Filter for short-term hospitals (provider type code 01 and subtype code 01)
+            st_hospitals = df[(df['PRVDR_CTGRY_CD'] == 1) &
+                              (df['PRVDR_CTGRY_SBTYP_CD'] == 1)]
+            # Add a 'Year' column to the DataFrame
+            st_hospitals['Year'] = year
+
+            return st_hospitals  # Return the filtered DataFrame if loaded successfully
+        except Exception as e:
+            print(f'Error loading {file_name} with encoding {encoding}: {e}')
+    return None  # Return None if all attempts fail
+
+
+# List of encodings to try
+encodings = ['utf-8', 'ISO-8859-1', 'latin1', 'utf-8-sig', 'cp1252']
+
+# List of file names and corresponding years
+files_with_years = [('pos2016.csv', 2016), ('pos2017.csv', 2017),
+                    ('pos2018.csv', 2018), ('pos2019.csv', 2019)]
+
+# Load datasets for all years and filter for short-term hospitals
+appended_dfs = []
+for file_name, year in files_with_years:
+    df = load_and_filter_csv(file_name, encodings, year)
+    if df is not None:
+        appended_dfs.append(df)
+
+# Check if we successfully loaded and filtered data for all years
+if len(appended_dfs) == len(files_with_years):
+    # Append all filtered DataFrames together into one DataFrame
+    combined_df = pd.concat(appended_dfs, ignore_index=True)
+    print("Successfully appended all datasets.")
+
+    # Save the combined DataFrame to a CSV file named 'pos_6789.csv'
+    output_file = os.path.join(folder_path, 'pos_6789.csv')
+    combined_df.to_csv(output_file, index=False)
+    print(f"Combined dataset saved as {output_file}")
+else:
+    print("Some files could not be loaded or filtered.")
+
+# Optionally, print the first few rows of the combined DataFrame to verify
+if len(appended_dfs) > 0:
+    print(combined_df.head())
+```
+
+There was a utf-8 error, so I asked chatGPT how to fix it 
+```{python}
+combined_df = pd.read_csv(os.path.join(folder_path, 'pos_6789.csv'))
+
+# Group by 'Year' and count the number of rows per year
+hospitals_by_year = combined_df.groupby('Year').size()
+
+# Plotting the number of hospitals by year
+plt.figure(figsize=(8, 5))
+hospitals_by_year.plot(kind='bar', color='lightcoral')
+plt.title('Number of Hospitals by Year')
+plt.xlabel('Year')
+plt.ylabel('Number of Hospitals')
+plt.xticks(rotation=0)
+plt.show()
+```
+
 4. 
     a.
-    b.
+```{python}
+unique_hospitals_by_year = combined_df.groupby('Year')['PRVDR_NUM'].nunique()
+
+# Plotting the number of unique hospitals by year
+plt.figure(figsize=(8, 5))
+unique_hospitals_by_year.plot(kind='bar', color='lightcoral', edgecolor='black')
+plt.title('Number of Unique Hospitals by Year', fontsize=16)
+plt.xlabel('Year', fontsize=14)
+plt.ylabel('Number of Unique Hospitals', fontsize=14)
+plt.xticks(rotation=0)
+plt.grid(axis='y', linestyle='--', alpha=0.7)
+plt.tight_layout()
+plt.show()
+```
+
+    b.Both plots (total vs. unique hospitals) give the same result. This strongly suggests that the  dataset is clean and well-structured, with no duplicate entries for hospitals based on their CMS certification numbers (PRVDR_NUM). Each hospital appears only once per year, which means I can confidently proceed with further analysis without worrying about duplicate data affecting your results.
 
 ## Identify hospital closures in POS file (15 pts) (*)
 
